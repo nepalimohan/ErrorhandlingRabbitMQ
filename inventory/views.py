@@ -25,3 +25,12 @@ class InventoryView(APIView):
             print(e)
             return Response(status=status.HTTP_400_BAD_REQUEST)
             
+            
+class InventoryDeleteError(APIView):
+    def post(self, request):
+        try:
+            models.Inventory.objects.filter(product_id=request.data.get('item_id')).delete()
+            return Response(status=status.HTTP_200_OK)
+        except models.Inventory.DoesNotExist:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+            
