@@ -9,6 +9,9 @@ from rest_framework import status
 from . import models
 from . import serializers
 
+import pika
+import json
+
 # Create your views here.
 class ProductView(APIView):
     INVENTORY_URL = "http://127.0.0.1:8000/api/inventory/"
@@ -29,19 +32,37 @@ class ProductView(APIView):
         
     
     def post(self, request):
-        with transaction.atomic():
-            quantity = request.data.pop('quantity')
-            serializer = serializers.ProductSerializer(data = request.data)
-            if serializer.is_valid():
-                instance=serializer.save()
-                
-                inventory_creation = self.inventory_create_request(instance, quantity)
-                
-                if not inventory_creation:
-                    raise Exception("Error creating inventory")
-                
-                response_data = {
-                    'id': instance.id,
-                    'message': "Product created successfully!"
-                }
-                return Response(response_data, status=status.HTTP_200_OK)
+        try:
+            with transaction.atomic():
+                quantity = request.data.pop('quantity')
+                serializer = serializers.ProductSerializer(data = request.data)
+                if serializer.is_valid():
+                    instance=serializer.save()
+                    
+                    inventory_creation = self.inventory_create_request(instance, quantity)
+                    
+                    if not inventory_creation:
+                        raise Exception("Error creating inventory")
+                    
+                    response_data = {
+                        'id': instance.id,
+                        'message': "Product created successfully!"
+                    }
+                    raise Exception('test')
+                    return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            # Compensate Inventory if an error occurs
+            connection = pika.BlockingConnection(pika.ConnectionParameters(host='rabbitmq'))
+            channel = connection.channel()
+            channel.queue_declare(queue='compensate_inventory')
+
+            event = {
+                "item_id": instance.id,
+                "quantity": quantity
+            }
+
+            channel.basic_publish(exchange='',
+                                routing_key='compensate_inventory',
+                                body=json.dumps(event))
+
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

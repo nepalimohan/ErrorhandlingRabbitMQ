@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -29,7 +30,8 @@ INSTALLED_APPS = [
     'product',
     'inventory',
     
-    'rest_framework'
+    'rest_framework',
+    'django_extensions'
 ]
 
 MIDDLEWARE = [
@@ -79,10 +81,24 @@ DATABASES = {
         'NAME': 'practice',
         'USER': 'postgres',
         'PASSWORD': 'root',    
-        'HOST': 'localhost',
+        # 'HOST': 'localhost',
+        'HOST': 'postgres',
         'PORT': '5432',
     }
 }
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.mysql',
+#         'NAME': 'practice',
+#         'USER': 'postgres',
+#         'PASSWORD': 'root',
+#         'HOST': 'mysql',
+#         'PORT': '3306',
+#     }
+# }
+
+
 
 
 # Password validation
@@ -125,3 +141,13 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+
+# Celery Configuration Options
+CELERY_BROKER_URL = 'amqp://guest:guest@rabbitmq:5672/'
+CELERY_RESULT_BACKEND = 'rpc://'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'UTC'
