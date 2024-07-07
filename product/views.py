@@ -11,16 +11,18 @@ from . import serializers
 
 # Create your views here.
 class ProductView(APIView):
+    INVENTORY_URL = "http://127.0.0.1:8000/api/inventory/"
     def get(self, request):
         product_list = models.Product.objects.all()
         serializer = serializers.ProductSerializer(product_list, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
-    def inventory_create_request(instance):
+    def inventory_create_request(self, instance, quantity):
         data = {
-            'id': instance.id
+            'product_id': instance.id,
+            'total_quantity': quantity,
         }
-        response = requests.post("http:127.0.0.1:8000/api/inventory/", json=data)
+        response = requests.post(self.INVENTORY_URL, json=data)
         if response.status_code == 200:
             return True
         return False
@@ -33,7 +35,7 @@ class ProductView(APIView):
             if serializer.is_valid():
                 instance=serializer.save()
                 
-                inventory_creation = self.inventory_create_request(instance)
+                inventory_creation = self.inventory_create_request(instance, quantity)
                 
                 if not inventory_creation:
                     raise Exception("Error creating inventory")
